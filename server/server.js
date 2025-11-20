@@ -40,10 +40,10 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 const HOST = process.env.HOST || "0.0.0.0";
 
 try {
-  const address = await fastify.listen({ port: PORT, host: HOST });
+  const port = process.env.PORT || 3001;
+  const address = fastify.listen({ port, host: "0.0.0.0" });
   fastify.log.info(`Servidor rodando em ${address}`);
 } catch (err) {
   fastify.log.error(err);
   process.exit(1);
 }
-

@@ -13,53 +13,61 @@ export const analyseCareers = async ({ candidate, requestedCareers = [] }) => {
         if (typeof s === "object" && s.name) return s.name;
         return [];
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, 5); // Limita a 5 skills
 
     const queries = new Set();
 
+    // Prioriza careers solicitadas
     if (requestedCareers && requestedCareers.length) {
-      requestedCareers.forEach((c) =>
-        queries.add(`${c} demanded skills and typical learning path`)
-      );
-      requestedCareers.forEach((c) =>
-        queries.add(`${c} job market demand Brazil 2024 2025`)
-      );
+      requestedCareers.slice(0, 3).forEach((c) => {
+        queries.add(`${c} skills job market Brazil 2025`);
+      });
     }
 
-    skillNames.forEach((skill) => {
-      queries.add(`${skill} jobs required skills certifications`);
-      queries.add(`${skill} career path learning resources`);
-      queries.add(`${skill} demand Brazil 2024 2025`);
+    // Adiciona skills de forma controlada
+    skillNames.slice(0, 4).forEach((skill) => {
+      queries.add(`${skill} career path jobs Brazil`);
     });
 
     if (!queries.size) {
-      queries.add("technology careers high demand 2025 Brazil");
-      queries.add("skills most requested software jobs 2025");
+      queries.add("tech careers Brazil 2025");
+      queries.add("software jobs demand");
     }
 
-    const queriesArray = Array.from(queries);
+    // Limita a máximo 6 queries
+    const queriesArray = Array.from(queries).slice(0, 6);
 
-    const promises = queriesArray.map((q) =>
-      loadWeb(q).catch((e) => {
+    // Executa com delay entre requisições para evitar rate limit
+    const webResults = [];
+    for (const q of queriesArray) {
+      try {
+        const result = await loadWeb(q, { 
+          serpLimit: 2, 
+          jobLimit: 3, 
+          delayMs: 300 
+        });
+        webResults.push(result);
+      } catch (e) {
         console.error(
           `[${agentName}] web search failed for query:`,
           q,
           e?.message || e
         );
-        return { query: q, results: [], jobs: [] };
-      })
-    );
-    const webResults = await Promise.all(promises);
+        webResults.push({ query: q, results: [], jobs: [] });
+      }
+    }
 
+    // Consolida dados com limite de tamanho
     const webResultsString = webResults
       .map((w) => {
         const pagesPart = (w.results || [])
-          .slice(0, 3)
-          .map((r) => `${r.title} | ${r.link} | ${r.snippet}`)
+          .slice(0, 2)
+          .map((r) => `${r.title} | ${r.link} | ${(r.snippet || "").slice(0, 150)}`)
           .join(" ; ");
 
         const jobsPart = (w.jobs || [])
-          .slice(0, 5)
+          .slice(0, 3)
           .map((j) => {
             const company = j.company ? ` at ${j.company}` : "";
             const location = j.location ? ` | ${j.location}` : "";
@@ -69,10 +77,10 @@ export const analyseCareers = async ({ candidate, requestedCareers = [] }) => {
 
         const parts = [`Query: ${w.query}`];
         if (pagesPart) parts.push(`PAGES: ${pagesPart}`);
-        if (jobsPart) parts.push(`JobResults: ${jobsPart}`);
+        if (jobsPart) parts.push(`JOBS: ${jobsPart}`);
         return parts.join(" -> ");
       })
-      .join("\n\n");
+      .join("\n");
 
     const candidateJson = JSON.stringify({
       name: candidate.name || "",

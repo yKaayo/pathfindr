@@ -37,6 +37,8 @@ const Carrer = () => {
     };
 
     const res = await generateCarrer(skills);
+    console.log(res);
+    
 
     return res;
   };
@@ -59,14 +61,12 @@ const Carrer = () => {
   if (loading) {
     return (
       <section className="flex min-h-screen w-full items-center justify-center">
-        <Lottie
-          className="absolute"
-          animationData={loadingAnim}
-          loop={true}
-        />
+        <Lottie className="absolute" animationData={loadingAnim} loop={true} />
       </section>
     );
   }
+
+  if (!data.careers) return;
 
   const sortedCareers = [...data.careers].sort(
     (a, b) => b.matchScore - a.matchScore,
