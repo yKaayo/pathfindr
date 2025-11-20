@@ -4,21 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Schema
+import PdfForm from "@/components/PdfForm";
+import ResumeReviewModal from "@/components/ResumeFixModal";
 import { pdfUploadSchema } from "@/schemas/pdfUploadSchema";
-
-// Services
 import { sendSkills } from "@/services/SkillApi";
 
-// Component
-import PdfForm from "@/components/PdfForm";
-
-const Skills = () => {
+const SkillsPage = () => {
   const [pdfPreview, setPdfPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [resume, setResume] = useState(null);
-
-  console.log(resume);
+  const [showReview, setShowReview] = useState(false);
 
   const {
     register,
@@ -36,10 +31,8 @@ const Skills = () => {
     if (pdfFile && pdfFile.length > 0) {
       const file = pdfFile[0];
       const url = URL.createObjectURL(file);
-
-      if (currentObjectUrl.current) {
+      if (currentObjectUrl.current)
         URL.revokeObjectURL(currentObjectUrl.current);
-      }
       currentObjectUrl.current = url;
       setPdfPreview(url);
       return () => {
@@ -59,26 +52,30 @@ const Skills = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+    try {
+      const fd = new FormData();
+      if (data.pdf && data.pdf.length > 0) fd.append("pdf", data.pdf[0]);
+      if (data.skills) fd.append("skills", data.skills.trim());
+
+      setShowReview(true);
+    } catch (err) {
+      console.error("Erro no envio/extracao:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveReviewed = async (updatedResume) => {
+    setShowReview(false);
 
     try {
-      const skills = data.skills ? data.skills.trim() : "";
+      setIsLoading(true);
 
-      if (!data.pdf || data.pdf.length === 0) {
-        const payload = { skills };
-        const res = await sendSkills(payload);
-        console.log("Resposta n8n:", res);
-        return;
-      }
+      const res = await sendSkills(updatedResume);
 
-      const fd = new FormData();
-      fd.append("pdf", data.pdf[0]);
-      if (skills) fd.append("skills", skills);
-
-      const res = await sendSkills(fd);
-      setResume(res);
-    } catch (error) {
-      console.error("Erro no envio de skills:", error);
-      throw error;
+      setResume(res.data ?? res);
+    } catch (err) {
+      console.error("Erro ao atualizar currículo:", err);
     } finally {
       setIsLoading(false);
     }
@@ -99,8 +96,15 @@ const Skills = () => {
         isLoading={isLoading}
         pdfFile={pdfFile}
       />
+
+      <ResumeReviewModal
+        open={showReview}
+        resume={resume}
+        onClose={() => setShowReview(false)}
+        onSave={handleSaveReviewed}
+      />
     </section>
   );
 };
 
-export default Skills;
+export default SkillsPage;

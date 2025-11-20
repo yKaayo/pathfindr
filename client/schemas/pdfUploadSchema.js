@@ -27,36 +27,40 @@ function hasPdf(files) {
 
 export const pdfUploadSchema = z
   .object({
-    pdf: z.any().optional(),
-    skills: z.string().optional(),
+    pdf: z.any(),
   })
-
   .refine(
     (data) => {
-      const files = data.pdf;
-      if (!hasPdf(files)) return true;
-      const first = Array.isArray(files) ? files[0] : files?.[0];
-      if (!isFileLike(first)) return false;
-      if (first.type !== "application/pdf") return false;
-      if (first.size > MAX_FILE_SIZE) return false;
-      return true;
+      return hasPdf(data.pdf);
     },
     {
-      message: "Arquivo inválido — apenas PDF até 5MB.",
+      message: "O envio do PDF é obrigatório.",
       path: ["pdf"],
     },
   )
-
   .refine(
     (data) => {
-      const okPdf = hasPdf(data.pdf);
-      const okSkills =
-        typeof data.skills === "string" && data.skills.trim().length > 0;
-      return okPdf || okSkills;
+      const files = data.pdf;
+      if (!hasPdf(files)) return false;
+      const first = Array.isArray(files) ? files[0] : files?.[0];
+      if (!isFileLike(first)) return false;
+      return first.type === "application/pdf";
     },
     {
-      message:
-        "Envie um PDF ou descreva suas habilidades (pelo menos 1 é obrigatório).",
-      path: ["skills"],
+      message: "O arquivo deve ser um PDF.",
+      path: ["pdf"],
+    },
+  )
+  .refine(
+    (data) => {
+      const files = data.pdf;
+      if (!hasPdf(files)) return false;
+      const first = Array.isArray(files) ? files[0] : files?.[0];
+      if (!isFileLike(first)) return false;
+      return first.size <= MAX_FILE_SIZE;
+    },
+    {
+      message: "O arquivo PDF deve ter no máximo 5MB.",
+      path: ["pdf"],
     },
   );

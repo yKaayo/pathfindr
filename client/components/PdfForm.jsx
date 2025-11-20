@@ -16,9 +16,9 @@ const PdfForm = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="h-full w-full space-y-6 rounded-lg border border-zinc-900/50 p-5 shadow-2xl bg-blue-light"
+      className="bg-blue-light h-full w-full space-y-6 rounded-lg border border-zinc-900/50 p-5 shadow-2xl"
     >
-      <div className="">
+      <div className="space-y-4">
         {/* PDF */}
         <div className="space-y-2">
           <label htmlFor="pdf" className="block font-medium">
@@ -29,7 +29,7 @@ const PdfForm = ({
             type="file"
             accept="application/pdf"
             {...register("pdf")}
-            className="w-full rounded-md border border-zinc-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="input"
           />
           {errors.pdf && (
             <p className="text-sm text-red-500">{String(errors.pdf.message)}</p>
@@ -50,26 +50,6 @@ const PdfForm = ({
               {(pdfFile?.[0]?.size / 1024).toFixed(2)} KB)
             </p>
           </div>
-        )}
-      </div>
-
-      <p className="text-center">OU</p>
-
-      <div className="">
-        <label className="block font-medium" htmlFor="skills">
-          Descreva suas habilidades:
-        </label>
-        <textarea
-          id="skills"
-          {...register("skills")}
-          className="w-full rounded-md border border-zinc-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          rows={4}
-          placeholder="Liste seus conhecimentos, certificados e outros aqui"
-        />
-        {errors.skills && (
-          <p className="text-sm text-red-500">
-            {String(errors.skills.message)}
-          </p>
         )}
       </div>
 

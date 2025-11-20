@@ -1,39 +1,43 @@
-export const sendSkills = async (body) => {
-  const N8N_WEBHOOK = process.env.NEXT_PUBLIC_N8N_WEBHOOK;
-  if (!N8N_WEBHOOK) throw new Error("N8N_WEBHOOK não configurado");
+import axios from "axios";
 
+export const sendSkills = async (body) => {
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
 
-  const fetchOpts = {
+  const axiosConfig = {
     method: "POST",
+    url: `${process.env.NEXT_PUBLIC_BASE_URL}/skill`,
+    headers: {},
+    data: null,
   };
 
   if (isForm) {
-    fetchOpts.body = body;
+    axiosConfig.data = body;
   } else {
-    fetchOpts.body = JSON.stringify(body);
-    fetchOpts.headers = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
+    axiosConfig.data = body;
+    axiosConfig.headers["Content-Type"] = "application/json";
+    axiosConfig.headers["Accept"] = "application/json";
   }
 
   try {
-    const res = await fetch(N8N_WEBHOOK, fetchOpts);
-    const data = await res.text().catch(() => "");
-    if (!res.ok) {
-      console.error("n8n retornou erro:", res.status, text);
-      throw new Error(`n8n retornou ${res.status}: ${text}`);
+    const res = await axios(axiosConfig);
+
+    if (typeof res.data === "string") {
+      try {
+        return JSON.parse(res.data);
+      } catch {
+        return res.data;
+      }
     }
 
-    try {
-      const json = JSON.parse(data);
-      return json;
-    } catch {
-      return data;
-    }
+    return res.data;
   } catch (err) {
-    console.error("Falha ao chamar webhook n8n:", err);
-    throw err;
+    const status = err.response?.status || "SEM_STATUS";
+    const data = err.response?.data || err.message;
+
+    console.error("Erro ao chamar a api:", status, data);
+
+    throw new Error(
+      `Retornou erro: ${status} → ${typeof data === "string" ? data : JSON.stringify(data)}`,
+    );
   }
 };
