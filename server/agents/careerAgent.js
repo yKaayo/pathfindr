@@ -46,18 +46,31 @@ export const analyseCareers = async ({ candidate, requestedCareers = [] }) => {
           q,
           e?.message || e
         );
-        return { query: q, results: [] };
+        return { query: q, results: [], jobs: [] };
       })
     );
     const webResults = await Promise.all(promises);
 
     const webResultsString = webResults
       .map((w) => {
-        const top = (w.results || [])
+        const pagesPart = (w.results || [])
           .slice(0, 3)
           .map((r) => `${r.title} | ${r.link} | ${r.snippet}`)
           .join(" ; ");
-        return `Query: ${w.query} -> ${top}`;
+
+        const jobsPart = (w.jobs || [])
+          .slice(0, 5)
+          .map((j) => {
+            const company = j.company ? ` at ${j.company}` : "";
+            const location = j.location ? ` | ${j.location}` : "";
+            return `${j.title}${company}${location} | ${j.link}`;
+          })
+          .join(" ; ");
+
+        const parts = [`Query: ${w.query}`];
+        if (pagesPart) parts.push(`PAGES: ${pagesPart}`);
+        if (jobsPart) parts.push(`JobResults: ${jobsPart}`);
+        return parts.join(" -> ");
       })
       .join("\n\n");
 
@@ -92,7 +105,6 @@ export const analyseCareers = async ({ candidate, requestedCareers = [] }) => {
       if (!parsed.meta.searchQueries) parsed.meta.searchQueries = queriesArray;
       return parsed;
     } catch (err) {
-      // fallback: pedir ao LLM extrair apenas JSON
       const fallbackPrompt = `O texto abaixo deve conter um JSON, mas não foi parseado. Extraia apenas o JSON válido e retorne somente o JSON.\n\n${text}`;
       const fallbackResp = await llm.call([
         { role: "user", content: fallbackPrompt },

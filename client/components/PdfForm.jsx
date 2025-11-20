@@ -36,10 +36,8 @@ const PdfForm = ({
           )}
         </div>
 
-        {/* Preview */}
         {pdfPreview && (
           <div className="space-y-2">
-            <h3 className="font-medium">Preview do PDF:</h3>
             <iframe
               src={pdfPreview}
               className="h-80 w-full rounded-md border border-zinc-300"

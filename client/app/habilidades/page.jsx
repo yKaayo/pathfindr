@@ -57,6 +57,10 @@ const SkillsPage = () => {
       if (data.pdf && data.pdf.length > 0) fd.append("pdf", data.pdf[0]);
       if (data.skills) fd.append("skills", data.skills.trim());
 
+      const res = await sendSkills(fd);
+
+      setResume(res.data ?? res);
+
       setShowReview(true);
     } catch (err) {
       console.error("Erro no envio/extracao:", err);
@@ -71,9 +75,7 @@ const SkillsPage = () => {
     try {
       setIsLoading(true);
 
-      const res = await sendSkills(updatedResume);
-
-      setResume(res.data ?? res);
+      setResume(updatedResume)
     } catch (err) {
       console.error("Erro ao atualizar currículo:", err);
     } finally {
