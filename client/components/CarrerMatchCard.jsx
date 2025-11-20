@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import { TrendingUp, BookOpen, AlertCircle, X } from "lucide-react";
@@ -97,7 +97,9 @@ const CareerMatchCard = ({ career, rank }) => {
                     <a
                       href={path.link}
                       key={idx}
-                      className="flex w-full flex-col rounded-lg bg-blue-50 p-3"
+                      className="flex w-full flex-col rounded-lg bg-blue-50 p-3 shadow"
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
                       <div className="text-sm font-medium text-gray-900">
                         {path.resource}

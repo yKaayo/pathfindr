@@ -6,10 +6,14 @@ import multipart from "@fastify/multipart";
 // MongoDB
 import { connect } from "./config/mongo.js";
 
+// Oracle
+import {initOracle} from "./config/oracle.js"
+
 // Routes
 import users from "./routes/userRoutes.js";
 import skills from "./routes/skillRoutes.js";
 import career from "./routes/careerRoutes.js";
+import subscribe from "./routes/subscribeRoutes.js";
 
 const fastify = Fastify({
   logger: true,
@@ -29,12 +33,15 @@ fastify.register(multipart, {
   },
 });
 
-connect();
+// Databases
+await connect();
+await initOracle();
 
 // Routes
 fastify.register(users, { prefix: "/users" });
 fastify.register(skills, { prefix: "/skill" });
 fastify.register(career, { prefix: "/career" });
+fastify.register(subscribe, { prefix: "/subscribe" });
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 const HOST = process.env.HOST || "0.0.0.0";

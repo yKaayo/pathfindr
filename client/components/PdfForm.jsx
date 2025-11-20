@@ -22,7 +22,7 @@ const PdfForm = ({
         {/* PDF */}
         <div className="space-y-2">
           <label htmlFor="pdf" className="block font-medium">
-            Arquivo PDF
+            Selecione o seu currículo: (Em PDF)
           </label>
           <input
             id="pdf"

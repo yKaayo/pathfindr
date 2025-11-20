@@ -79,6 +79,7 @@ const ResumeReviewModal = ({ open = false, resume = {}, onClose, onSave }) => {
               {key === "summary" ||
               key === "skills" ||
               key === "experience" ||
+              key === "certifications" ||
               key === "education" ? (
                 <textarea
                   {...register(key)}
