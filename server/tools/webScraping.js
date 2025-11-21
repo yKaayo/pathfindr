@@ -4,10 +4,7 @@ import { load } from "cheerio";
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
 const CACHE = new Map();
 const CACHE_TTL = 3600000; // 1 hora em ms
-const MAX_CONCURRENT_REQUESTS = 2; // Limita requisições simultâneas
 const REQUEST_DELAY = 500; // 500ms entre requisições
-let requestQueue = [];
-let isProcessing = false;
 
 const ALLOWED_DOMAINS = [
   "developer.mozilla.org",
@@ -25,7 +22,6 @@ function domainFromUrl(u) {
   }
 }
 
-// Limpa cache expirado
 function getCachedOrNull(key) {
   const cached = CACHE.get(key);
   if (!cached) return null;
@@ -46,7 +42,7 @@ async function sleep(ms) {
 
 async function serpapiSearch(query, num = 2) {
   if (!SERPAPI_KEY) throw new Error("SERPAPI_KEY não configurado");
-  
+
   const cacheKey = `serp:${query}:${num}`;
   const cached = getCachedOrNull(cacheKey);
   if (cached) return cached;
@@ -58,14 +54,14 @@ async function serpapiSearch(query, num = 2) {
     q: query,
     api_key: SERPAPI_KEY,
     hl: "pt",
-    num: Math.min(num + 2, 5), // Pede um pouco mais para filtrar
+    num: Math.min(num + 2, 5),
   });
-  
+
   const url = `https://serpapi.com/search.json?${params.toString()}`;
   const res = await fetch(url, { method: "GET", timeout: 10000 });
-  
+
   if (!res.ok) throw new Error(`SerpAPI erro ${res.status}`);
-  
+
   const json = await res.json();
   const organic = json.organic_results || [];
   const results = organic
@@ -79,14 +75,14 @@ async function serpapiSearch(query, num = 2) {
         .slice(0, 200),
     }))
     .filter((x) => x.link);
-  
+
   setCached(cacheKey, results);
   return results;
 }
 
 async function getJobListings(query, num = 3) {
   if (!SERPAPI_KEY) throw new Error("SERPAPI_KEY não configurado");
-  
+
   const cacheKey = `jobs:${query}:${num}`;
   const cached = getCachedOrNull(cacheKey);
   if (cached) return cached;
@@ -99,15 +95,15 @@ async function getJobListings(query, num = 3) {
     api_key: SERPAPI_KEY,
     hl: "pt",
   });
-  
+
   const url = `https://serpapi.com/search.json?${params.toString()}`;
   const res = await fetch(url, { method: "GET", timeout: 10000 });
-  
+
   if (!res.ok) throw new Error(`SerpAPI erro ${res.status}`);
-  
+
   const json = await res.json();
   const jobs = [];
-  
+
   if (Array.isArray(json.jobs_results) && json.jobs_results.length) {
     for (const j of json.jobs_results.slice(0, num)) {
       jobs.push({
@@ -127,15 +123,18 @@ async function getJobListings(query, num = 3) {
       "glassdoor.com",
       "ziprecruiter.com",
     ];
-    
+
     for (const r of organic.slice(0, num * 3)) {
       const link = r.link || r.source || "";
       if (!link) continue;
-      
+
       const host = domainFromUrl(link) || "";
       if (jobDomains.some((d) => host.includes(d))) {
         const title = r.title || "";
-        const snippet = (r.snippet || "").replace(/\s+/g, " ").trim().slice(0, 150);
+        const snippet = (r.snippet || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 150);
 
         let company = "";
         let location = "";
@@ -144,15 +143,15 @@ async function getJobListings(query, num = 3) {
           .split(/[-—|•]/)
           .map((p) => p.trim())
           .filter(Boolean);
-        
+
         if (parts.length >= 2) {
           company = parts[0];
           location = parts[1];
         }
-        
+
         jobs.push({ title, company, location, link, snippet, source: host });
       }
-      
+
       if (jobs.length >= num) break;
     }
   }
@@ -172,14 +171,14 @@ async function fetchHtml(url) {
       },
       timeout: 8000,
     });
-    
+
     if (!res.ok) {
       return { error: new Error(`fetch erro ${res.status} para ${url}`) };
     }
-    
+
     const contentType = res.headers.get("content-type") || "";
     if (contentType.includes("application/pdf")) return { isPdf: true };
-    
+
     const html = await res.text();
     return { isPdf: false, html, contentType };
   } catch (err) {
@@ -194,32 +193,34 @@ function extractPageData(html, url) {
     $('meta[name="description"]').attr("content") ||
     $('meta[property="og:description"]').attr("content") ||
     ""
-  ).trim().slice(0, 150);
-  
+  )
+    .trim()
+    .slice(0, 150);
+
   const h1 = ($("h1").first().text() || "").trim().slice(0, 100);
-  
+
   const paragraphs = [];
   $("p").each((i, el) => {
     if (paragraphs.length >= 2) return false;
     const text = $(el).text().trim();
     if (text.length > 50) paragraphs.push(text.slice(0, 200));
   });
-  
+
   const bullets = [];
   $("ul li").each((i, el) => {
     if (bullets.length >= 5) return false;
     const t = $(el).text().trim();
     if (t && t.length > 10) bullets.push(t.slice(0, 100));
   });
-  
+
   const snippetParts = [];
   if (h1) snippetParts.push(h1);
   if (metaDescription) snippetParts.push(metaDescription);
   if (paragraphs.length) snippetParts.push(paragraphs[0]);
   if (bullets.length) snippetParts.push(bullets.slice(0, 2).join(" — "));
-  
+
   const snippet = snippetParts.join(" ").slice(0, 300);
-  
+
   return {
     title: title || metaDescription || url,
     link: url,
@@ -236,7 +237,6 @@ export async function loadWeb(
   opts = { serpLimit: 2, delayMs: 300, jobLimit: 3 }
 ) {
   try {
-    // Tenta URL direto se válida
     try {
       const maybeUrl = new URL(input);
       const host = maybeUrl.hostname.replace(/^www\./, "");
@@ -270,14 +270,12 @@ export async function loadWeb(
       }
     } catch {}
 
-    // Busca na web com limites reduzidos
     const serpLimit = Math.min(opts.serpLimit || 2, 2);
     const jobLimit = Math.min(opts.jobLimit || 3, 3);
 
     const serpResults = await serpapiSearch(input, serpLimit);
     const results = [];
 
-    // Processa apenas primeiros 2 resultados
     for (const r of serpResults.slice(0, 2)) {
       const host = domainFromUrl(r.link);
       if (host && ALLOWED_DOMAINS.includes(host)) {

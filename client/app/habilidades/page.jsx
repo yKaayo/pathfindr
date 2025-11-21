@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import PdfForm from "@/components/PdfForm";
 import ResumeReviewModal from "@/components/ResumeFixModal";
 import { pdfUploadSchema } from "@/schemas/pdfUploadSchema";
-import { sendSkills } from "@/services/skillApi";
+import { sendSkills } from "../../services/skillApi";
 
 const SkillsPage = () => {
   const [pdfPreview, setPdfPreview] = useState(null);
