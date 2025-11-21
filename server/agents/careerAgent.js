@@ -14,18 +14,16 @@ export const analyseCareers = async ({ candidate, requestedCareers = [] }) => {
         return [];
       })
       .filter(Boolean)
-      .slice(0, 5); // Limita a 5 skills
+      .slice(0, 5);
 
     const queries = new Set();
 
-    // Prioriza careers solicitadas
     if (requestedCareers && requestedCareers.length) {
       requestedCareers.slice(0, 3).forEach((c) => {
         queries.add(`${c} skills job market Brazil 2025`);
       });
     }
 
-    // Adiciona skills de forma controlada
     skillNames.slice(0, 4).forEach((skill) => {
       queries.add(`${skill} career path jobs Brazil`);
     });
@@ -35,10 +33,8 @@ export const analyseCareers = async ({ candidate, requestedCareers = [] }) => {
       queries.add("software jobs demand");
     }
 
-    // Limita a máximo 6 queries
     const queriesArray = Array.from(queries).slice(0, 6);
 
-    // Executa com delay entre requisições para evitar rate limit
     const webResults = [];
     for (const q of queriesArray) {
       try {
@@ -58,7 +54,6 @@ export const analyseCareers = async ({ candidate, requestedCareers = [] }) => {
       }
     }
 
-    // Consolida dados com limite de tamanho
     const webResultsString = webResults
       .map((w) => {
         const pagesPart = (w.results || [])

@@ -16,3 +16,4 @@ create table subscriptions_pathfindr (
    constraint fk_sub_user foreign key ( user_id )
       references users_pathfindr ( id )
 );
+
