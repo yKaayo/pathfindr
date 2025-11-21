@@ -18,7 +18,7 @@ export async function verifySubscribe(request, reply) {
       SELECT u.id as user_id, u.name, u.email,
              s.id as sub_id, s.active, s.started_at, s.expires_at, s.external_id
       FROM users_pathfindr u
-      LEFT JOIN users_pathfindr s ON s.user_id = u.id AND s.active = 1
+      LEFT JOIN subscriptions_pathfindr s ON s.user_id = u.id AND s.active = 1
       WHERE u.email = :email
     `;
 
